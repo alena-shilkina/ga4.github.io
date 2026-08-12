@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Свой GA4 — дашборд</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#17191C;--paper:#E4E2DA;--panel:#F7F6F2;--rule:#C7C4B9;--muted:#6C6B63;
+  --c0:#FF48B0;--c1:#0078BF;--c2:#765BA7;--c3:#00875A;--flag:#D6472F;--warm:#E8890C;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --disp:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px;margin:0 auto;padding:0 20px 80px}
+header{padding:30px 0 18px;border-bottom:2px solid var(--ink)}
+h1{font-family:var(--disp);font-weight:800;font-size:clamp(28px,4.2vw,44px);letter-spacing:-.03em;line-height:.95;margin:0}
+h1 em{font-style:normal;color:var(--c1)}
+.sub{font-family:var(--mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted);margin-top:8px}
+.masthead{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:flex-end}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;background:var(--ink);color:var(--paper);border:1.5px solid var(--ink);padding:9px 15px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:var(--ink);color:var(--paper)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+select,input{font-family:var(--mono);font-size:12.5px;padding:8px 9px;border:1.5px solid var(--rule);background:#fff;color:var(--ink)}
+input.wide{min-width:340px;flex:1}
+:focus-visible{outline:2px solid var(--c1);outline-offset:2px}
+section{margin-top:38px}
+.eyebrow{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);border-bottom:1.5px solid var(--rule);padding-bottom:7px;margin-bottom:15px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h2{font-family:var(--disp);font-size:24px;letter-spacing:-.025em;margin:0 0 6px}
+.note{font-size:13.4px;color:var(--muted);max-width:86ch;margin:6px 0 0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1.5px;background:var(--rule);border:1.5px solid var(--rule)}
+.kpi{background:var(--panel);padding:13px 14px}
+.kpi .k{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.kpi .v{font-family:var(--mono);font-size:23px;font-weight:600;letter-spacing:-.02em;margin-top:3px}
+.kpi .d{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.up{color:var(--c3)}.down{color:var(--flag)}
+.box{background:var(--panel);border:1.5px solid var(--rule);padding:16px}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.gl{stroke:var(--rule);stroke-width:1}
+.axt{font-family:var(--mono);font-size:9.5px;fill:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.tablewrap{overflow-x:auto;border:1.5px solid var(--rule);background:var(--panel)}
+table{border-collapse:collapse;width:100%}
+th{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;text-align:right;padding:9px 11px;background:var(--panel);border-bottom:1.5px solid var(--ink);cursor:pointer;white-space:nowrap;color:var(--muted);position:sticky;top:0}
+th:first-child,td:first-child{text-align:left}
+th.sorted{color:var(--ink);font-weight:600}
+td{padding:8px 11px;border-bottom:1px solid var(--rule);text-align:right;font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+td:first-child{font-family:var(--sans);font-size:13.4px;white-space:normal;min-width:220px}
+tr:hover td{background:#fff}
+td a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--rule)}
+.bar-cell{position:relative}
+.bar-cell i{position:absolute;left:0;top:0;bottom:0;background:var(--acc);opacity:.16}
+.bar-cell span{position:relative}
+.pill{display:inline-block;font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.07em;padding:1px 5px;margin-left:6px;border:1px solid currentColor}
+.pill.pin{color:var(--c0)}.pill.low{color:var(--flag)}
+.setup{background:var(--panel);border:1.5px solid var(--rule);border-left:6px solid var(--c1);padding:20px 22px;margin-top:22px}
+.setup h3{font-family:var(--disp);font-size:20px;margin:0 0 10px}
+.setup ol{margin:0;padding-left:20px}
+.setup li{margin-bottom:9px;font-size:14px}
+.setup code{font-family:var(--mono);font-size:12.5px;background:#fff;border:1px solid var(--rule);padding:1px 5px}
+.err{background:#fff;border:1.5px solid var(--flag);border-left:6px solid var(--flag);padding:12px 15px;margin-top:14px;font-size:13.6px}
+.ok{border-left-color:var(--c3);border-color:var(--rule);color:var(--muted)}
+.empty{background:var(--panel);border:1.5px dashed var(--rule);padding:28px 20px;text-align:center;color:var(--muted)}
+.hide{display:none!important}
+.spin{display:inline-block;width:11px;height:11px;border:2px solid var(--rule);border-top-color:var(--ink);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-1px;margin-right:7px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spin{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="masthead">
+    <div>
+      <h1>Свой <em>GA4</em></h1>
+      <div class="sub">Прямое подключение · без чужих коннекторов · Pinterest склеен</div>
+    </div>
+    <div class="ctl">
+      <select id="prop" class="hide"></select>
+      <select id="range">
+        <option value="28">28 дней</option>
+        <option value="7">7 дней</option>
+        <option value="30" selected>30 дней</option>
+        <option value="90">90 дней</option>
+        <option value="180">180 дней</option>
+      </select>
+      <button class="btn" id="connect">Подключить Google</button>
+      <button class="btn ghost hide" id="refresh">Обновить</button>
+    </div>
+  </div>
+  <div id="status"></div>
+</header>
+
+<div class="setup" id="setup">
+  <h3>Разовая настройка — минут пятнадцать</h3>
+  <ol>
+    <li>Открой <code>console.cloud.google.com</code> и создай проект (любое имя).</li>
+    <li>В разделе <b>APIs &amp; Services → Library</b> включи два API: <code>Google Analytics Data API</code> и <code>Google Analytics Admin API</code>.</li>
+    <li><b>APIs &amp; Services → OAuth consent screen</b>: тип <code>External</code>, заполни название и почту, в <b>Test users</b> добавь свой гугл-аккаунт. Публиковать приложение не нужно.</li>
+    <li><b>Credentials → Create credentials → OAuth client ID</b>, тип <code>Web application</code>. В <b>Authorized JavaScript origins</b> впиши домен, откуда откроешь этот файл — например <code>https://твой-логин.github.io</code>. Без пути, только домен.</li>
+    <li>Скопируй Client ID и вставь ниже. Чтобы не вставлять каждый раз, впиши его в константу <code>CLIENT_ID</code> в начале скрипта.</li>
+  </ol>
+  <div class="ctl" style="margin-top:14px">
+    <input class="wide" id="cid" placeholder="1234567890-xxxxx.apps.googleusercontent.com" autocomplete="off">
+    <button class="btn" id="saveCid">Применить</button>
+  </div>
+  <p class="note" style="margin-top:12px">Файл должен лежать на <code>https://</code>-домене из шага 4. С локального диска авторизация Google не работает — это его требование, обойти нельзя.</p>
+</div>
+
+<div id="app" class="hide">
+
+  <section>
+    <div class="eyebrow"><span>Сводка</span><span id="periodNote"></span></div>
+    <div class="kpis" id="kpis"></div>
+  </section>
+
+  <section>
+    <div class="eyebrow"><span>Динамика</span><span id="chartNote"></span></div>
+    <h2>Сессии и просмотры по дням</h2>
+    <div class="box" id="chart" style="margin-top:12px"></div>
+  </section>
+
+  <section>
+    <div class="eyebrow"><span>Источники</span><span>Pinterest сведён в одну строку</span></div>
+    <h2>Откуда приходят</h2>
+    <p class="note" style="margin-bottom:12px">GA4 разносит Pinterest на <code>pinterest.com / referral</code> и <code>Pinterest / organic</code>. Здесь они сложены — иначе доля канала выглядит вдвое меньше реальной.</p>
+    <div class="grid2">
+      <div class="box" id="srcChart"></div>
+      <div id="srcTable"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow"><span>Страницы</span><span id="pagesNote"></span></div>
+    <h2>Целевые страницы</h2>
+    <p class="note" style="margin-bottom:12px">Подгрузи CSV из Mediavine (<code>slug, views, revenue, rpm, cpm, impressionsPerPageview</code>) — появятся колонки дохода, и таблицу можно будет сортировать по деньгам, а не по просмотрам.</p>
+    <div class="ctl" style="margin-bottom:12px">
+      <label class="btn ghost" style="cursor:pointer">Загрузить Mediavine CSV<input type="file" id="mvFile" accept=".csv" style="display:none"></label>
+      <input id="q" placeholder="Поиск по слагу" style="min-width:200px">
+      <button class="btn ghost" id="exportCsv">Выгрузить CSV</button>
+      <span class="note" id="mvNote" style="margin:0"></span>
+    </div>
+    <div id="pages"></div>
+  </section>
+
+  <section>
+    <div class="eyebrow"><span>География</span><span></span></div>
+    <h2>Страны</h2>
+    <div id="countries" style="margin-top:12px"></div>
+  </section>
+</div>
+
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+/* ============ настройка ============ */
+const CLIENT_ID = '';                 // ← впиши сюда свой Client ID, чтобы не вводить каждый раз
+const SCOPE = 'https://www.googleapis.com/auth/analytics.readonly';
+const ADMIN = 'https://analyticsadmin.googleapis.com/v1beta';
+const DATA  = 'https://analyticsdata.googleapis.com/v1beta';
+
+const S = {token:null, props:[], prop:null, data:null, mv:{}, sort:{key:'sessions',dir:-1}, cid:CLIENT_ID};
+
+/* ============ утилиты ============ */
+const fmt=n=>n>=1e6?(n/1e6).toFixed(1).replace('.',',')+'M':n>=1e4?Math.round(n/1e3)+'k':Math.round(n).toLocaleString('ru-RU');
+const pf=v=>(v*100).toFixed(v<0.1?1:0).replace('.',',')+'%';
+const dstr=d=>d.toISOString().slice(0,10);
+function norm(u){let s=String(u||'').trim().split('?')[0].split('#')[0].toLowerCase();
+  s=s.replace(/^https?:\/\/[^\/]+/,'');if(!s.startsWith('/'))s='/'+s;s=s.replace(/\/+$/,'');return s||'/';}
+const title=s=>s==='/'?'(главная)':s.replace(/^\//,'').replace(/-/g,' ');
+function msg(html,cls){document.getElementById('status').innerHTML=html?`<div class="err ${cls||''}">${html}</div>`:'';}
+
+/* ============ авторизация ============ */
+let tokenClient=null;
+function initAuth(){
+  if(!S.cid){msg('Не указан Client ID. Пройди настройку ниже, потом нажми «Подключить Google».');return;}
+  if(!window.google||!google.accounts){setTimeout(initAuth,400);return;}
+  tokenClient=google.accounts.oauth2.initTokenClient({
+    client_id:S.cid, scope:SCOPE,
+    callback:async r=>{
+      if(r.error){msg('Google отклонил вход: '+r.error+'. Проверь, что домен этой страницы добавлен в Authorized JavaScript origins.');return;}
+      S.token=r.access_token; msg('');
+      document.getElementById('setup').classList.add('hide');
+      await loadProps();
+    }});
+}
+document.getElementById('connect').addEventListener('click',()=>{
+  if(!S.cid){S.cid=document.getElementById('cid').value.trim();}
+  if(!S.cid){msg('Сначала вставь Client ID.');return;}
+  initAuth(); if(tokenClient) tokenClient.requestAccessToken({prompt:''});
+});
+document.getElementById('saveCid').addEventListener('click',()=>{
+  S.cid=document.getElementById('cid').value.trim();
+  if(!S.cid){msg('Client ID пустой.');return;}
+  msg('Client ID принят. Нажми «Подключить Google».','ok'); initAuth();
+});
+
+async function api(url,body){
+  const opt={headers:{'Authorization':'Bearer '+S.token,'Content-Type':'application/json'}};
+  if(body){opt.method='POST';opt.body=JSON.stringify(body);}
+  const r=await fetch(url,opt);
+  if(r.status===401){S.token=null;throw new Error('Сессия истекла. Нажми «Подключить Google» ещё раз.');}
+  if(!r.ok){
+    let t=await r.text(); let d=''; try{d=JSON.parse(t).error.message;}catch(e){d=t.slice(0,300);}
+    if(r.status===403) throw new Error('Доступ закрыт (403). Обычно это значит, что не включён Analytics Data API или Admin API в Google Cloud. Ответ: '+d);
+    throw new Error('Ошибка '+r.status+': '+d);
+  }
+  return r.json();
+}
+
+/* ============ список свойств ============ */
+async function loadProps(){
+  try{
+    msg('<span class="spin"></span>Загружаю список свойств…','ok');
+    const j=await api(ADMIN+'/accountSummaries?pageSize=200');
+    S.props=[];
+    (j.accountSummaries||[]).forEach(a=>(a.propertySummaries||[]).forEach(p=>
+      S.props.push({id:p.property.split('/')[1], name:p.displayName, acc:a.displayName})));
+    if(!S.props.length){msg('Свойства GA4 не найдены. Проверь, что этот гугл-аккаунт имеет доступ хотя бы к одному ресурсу.');return;}
+    const sel=document.getElementById('prop');
+    sel.innerHTML=S.props.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+    sel.classList.remove('hide');
+    document.getElementById('refresh').classList.remove('hide');
+    document.getElementById('connect').textContent='Сменить аккаунт';
+    S.prop=S.props[0].id; msg('');
+    await load();
+  }catch(e){msg(e.message);}
+}
+
+/* ============ запрос отчётов ============ */
+function ranges(days){
+  const end=new Date(); end.setDate(end.getDate()-1);
+  const start=new Date(end); start.setDate(start.getDate()-days+1);
+  const pEnd=new Date(start); pEnd.setDate(pEnd.getDate()-1);
+  const pStart=new Date(pEnd); pStart.setDate(pStart.getDate()-days+1);
+  return {cur:{startDate:dstr(start),endDate:dstr(end)},prev:{startDate:dstr(pStart),endDate:dstr(pEnd)}};
+}
+async function load(){
+  if(!S.prop||!S.token) return;
+  const days=+document.getElementById('range').value, R=ranges(days);
+  msg('<span class="spin"></span>Тяну данные из GA4…','ok');
+  try{
+    const j=await api(`${DATA}/properties/${S.prop}:batchRunReports`,{requests:[
+      {dateRanges:[R.cur],dimensions:[{name:'date'}],
+       metrics:[{name:'sessions'},{name:'screenPageViews'},{name:'totalUsers'}],
+       orderBys:[{dimension:{dimensionName:'date'}}],limit:400},
+      {dateRanges:[R.cur],dimensions:[{name:'landingPagePlusQueryString'}],
+       metrics:[{name:'sessions'},{name:'screenPageViews'},{name:'engagementRate'}],
+       orderBys:[{metric:{metricName:'sessions'},desc:true}],limit:500},
+      {dateRanges:[R.cur],dimensions:[{name:'sessionSourceMedium'}],
+       metrics:[{name:'sessions'}],orderBys:[{metric:{metricName:'sessions'},desc:true}],limit:200},
+      {dateRanges:[R.cur],dimensions:[{name:'country'}],
+       metrics:[{name:'sessions'}],orderBys:[{metric:{metricName:'sessions'},desc:true}],limit:60},
+      {dateRanges:[R.prev],metrics:[{name:'sessions'},{name:'screenPageViews'},{name:'totalUsers'}]}
+    ]});
+    S.data={reports:j.reports,R,days};
+    msg('');
+    render();
+  }catch(e){msg(e.message);}
+}
+const rowsOf=rep=>(rep&&rep.rows)?rep.rows.map(r=>({
+  d:(r.dimensionValues||[]).map(x=>x.value), m:(r.metricValues||[]).map(x=>+x.value||0)})):[];
+
+/* ============ отрисовка ============ */
+function render(){
+  if(!S.data) return;
+  document.getElementById('app').classList.remove('hide');
+  const [daily,pages,sources,countries,prev]=S.data.reports;
+  const D=rowsOf(daily), P=rowsOf(pages), SR=rowsOf(sources), C=rowsOf(countries);
+  const pv=rowsOf(prev)[0]||{m:[0,0,0]};
+
+  const sum=i=>D.reduce((a,r)=>a+r.m[i],0);
+  const cur=[sum(0),sum(1),sum(2)];
+  const pin=SR.filter(r=>/pinterest/i.test(r.d[0])).reduce((a,r)=>a+r.m[0],0);
+  const totS=SR.reduce((a,r)=>a+r.m[0],0);
+
+  /* KPI */
+  const delta=(a,b)=>b?`<span class="${a>=b?'up':'down'}">${a>=b?'+':''}${Math.round((a/b-1)*100)}%</span>`:'—';
+  document.getElementById('kpis').innerHTML=[
+    ['Сессии',fmt(cur[0]),delta(cur[0],pv.m[0])+' к предыдущему периоду'],
+    ['Просмотры',fmt(cur[1]),delta(cur[1],pv.m[1])+' к предыдущему периоду'],
+    ['Пользователи',fmt(cur[2]),delta(cur[2],pv.m[2])+' к предыдущему периоду'],
+    ['Из Pinterest',totS?pf(pin/totS):'—',fmt(pin)+' сессий, все варианты вместе'],
+    ['Просмотров на сессию',cur[0]?(cur[1]/cur[0]).toFixed(2).replace('.',','):'—','глубина визита'],
+    ['Страниц в отчёте',fmt(P.length),'верхние 500 по сессиям']
+  ].map(([k,v,d])=>`<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
+  document.getElementById('periodNote').textContent=`${S.data.R.cur.startDate} — ${S.data.R.cur.endDate}`;
+
+  drawChart(D);
+  drawSources(SR,totS);
+  drawPages(P);
+  drawCountries(C,cur[0]);
+}
+
+function drawChart(D){
+  const host=document.getElementById('chart');
+  if(D.length<3){host.innerHTML='<div class="empty">Мало точек для графика.</div>';return;}
+  const W=1000,H=300,P={l:52,r:14,t:16,b:28};
+  const s=D.map(r=>r.m[0]), v=D.map(r=>r.m[1]);
+  const max=Math.max(...v,...s,1)*1.08;
+  const X=i=>P.l+(i/(D.length-1))*(W-P.l-P.r), Y=n=>H-P.b-(n/max)*(H-P.t-P.b);
+  const path=arr=>arr.map((n,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(n).toFixed(1)}`).join('');
+  const step=Math.ceil(D.length/9);
+  host.innerHTML=`<svg viewBox="0 0 ${W} ${H}">
+    ${[0,.25,.5,.75,1].map(t=>`<line class="gl" x1="${P.l}" x2="${W-P.r}" y1="${Y(max*t)}" y2="${Y(max*t)}"/>
+      <text class="axt" x="${P.l-8}" y="${Y(max*t)+3}" text-anchor="end">${fmt(max*t)}</text>`).join('')}
+    <path d="${path(v)}L${X(D.length-1)},${H-P.b}L${X(0)},${H-P.b}Z" fill="var(--c1)" opacity=".10"/>
+    <path d="${path(v)}" fill="none" stroke="var(--c1)" stroke-width="2.4"/>
+    <path d="${path(s)}" fill="none" stroke="var(--c0)" stroke-width="2" stroke-dasharray="5 3"/>
+    ${D.map((r,i)=>i%step===0?`<text class="axt" x="${X(i)}" y="${H-8}" text-anchor="middle">${r.d[0].slice(4,6)}.${r.d[0].slice(6,8)}</text>`:'').join('')}
+    <g transform="translate(${P.l+6},${P.t})">
+      <line x1="0" y1="0" x2="16" y2="0" stroke="var(--c1)" stroke-width="2.4"/><text class="axt" x="21" y="3">просмотры</text>
+      <line x1="96" y1="0" x2="112" y2="0" stroke="var(--c0)" stroke-width="2" stroke-dasharray="5 3"/><text class="axt" x="117" y="3">сессии</text>
+    </g></svg>`;
+  document.getElementById('chartNote').textContent=D.length+' дней';
+}
+
+function drawSources(SR,tot){
+  const merged={};
+  SR.forEach(r=>{
+    const raw=r.d[0];
+    const key=/pinterest/i.test(raw)?'Pinterest (все варианты)':raw;
+    merged[key]=(merged[key]||0)+r.m[0];
+  });
+  const list=Object.entries(merged).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v).slice(0,12);
+  const max=Math.max(...list.map(x=>x.v),1);
+  document.getElementById('srcTable').innerHTML=`<div class="tablewrap"><table>
+    <thead><tr><th>Источник</th><th>Сессии</th><th>Доля</th></tr></thead>
+    <tbody>${list.map(x=>`<tr>
+      <td>${x.k}${/pinterest/i.test(x.k)?'<span class="pill pin">склеено</span>':''}</td>
+      <td class="bar-cell" style="--acc:${/pinterest/i.test(x.k)?'#FF48B0':'#0078BF'}">
+        <i style="width:${(x.v/max*100).toFixed(1)}%"></i><span>${fmt(x.v)}</span></td>
+      <td>${pf(x.v/tot)}</td></tr>`).join('')}</tbody></table></div>`;
+  // донат
+  const top=list.slice(0,6), rest=tot-top.reduce((a,x)=>a+x.v,0);
+  const seg=[...top,...(rest>0?[{k:'прочее',v:rest}]:[])];
+  const COL=['#FF48B0','#0078BF','#765BA7','#00875A','#E8890C','#6C6B63','#C7C4B9'];
+  let a0=-Math.PI/2;
+  const arcs=seg.map((x,i)=>{
+    const a1=a0+(x.v/tot)*Math.PI*2, R=88, r=52, cx=150, cy=150;
+    const p=(ang,rad)=>`${(cx+Math.cos(ang)*rad).toFixed(1)},${(cy+Math.sin(ang)*rad).toFixed(1)}`;
+    const big=(a1-a0)>Math.PI?1:0;
+    const d=`M${p(a0,R)}A${R},${R} 0 ${big} 1 ${p(a1,R)}L${p(a1,r)}A${r},${r} 0 ${big} 0 ${p(a0,r)}Z`;
+    a0=a1;
+    return `<path d="${d}" fill="${COL[i%7]}" opacity=".85"><title>${x.k}: ${fmt(x.v)} (${pf(x.v/tot)})</title></path>`;
+  }).join('');
+  document.getElementById('srcChart').innerHTML=`<svg viewBox="0 0 300 300">${arcs}
+    <text x="150" y="146" text-anchor="middle" style="font-family:var(--mono);font-size:22px;font-weight:600;fill:var(--ink)">${fmt(tot)}</text>
+    <text x="150" y="164" text-anchor="middle" class="axt">сессий всего</text></svg>`;
+}
+
+function drawPages(P){
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  const hasMV=Object.keys(S.mv).length>0;
+  let rows=P.map(r=>{
+    const url=norm(r.d[0]);
+    const m=S.mv[url]||null;
+    return {url,name:title(url),sessions:r.m[0],views:r.m[1],eng:r.m[2],
+            rpm:m?m.rpm:null,revenue:m?m.revenue:null,ipp:m?m.ipp:null,mvViews:m?m.views:null};
+  }).filter(r=>!q||r.url.includes(q));
+  const cols=[{k:'name',l:'Страница'},{k:'sessions',l:'Сессии',b:1},{k:'views',l:'Просмотры'},{k:'eng',l:'Вовлеч.',p:1}]
+    .concat(hasMV?[{k:'rpm',l:'RPM',m:1},{k:'revenue',l:'Доход',m:1},{k:'ipp',l:'Impr/PV'}]:[]);
+  const key=cols.some(c=>c.k===S.sort.key)?S.sort.key:'sessions', dir=S.sort.dir;
+  rows.sort((a,b)=>{const x=a[key],y=b[key];
+    if(x==null&&y==null)return 0; if(x==null)return 1; if(y==null)return -1;
+    return typeof x==='string'?dir*x.localeCompare(y,'ru'):dir*(x-y);});
+  const max=Math.max(...rows.map(r=>r.sessions),1);
+  const cell=(r,c)=>{
+    const v=r[c.k];
+    if(c.k==='name') return `<a href="${r.url}" target="_blank" rel="noopener">${v}</a>`+
+      (r.ipp!=null&&r.ipp<25?'<span class="pill low">ipp '+r.ipp+'</span>':'');
+    if(v==null) return '—';
+    if(c.p) return pf(v);
+    if(c.m) return '$'+(+v).toFixed(2);
+    if(c.b) return `<span class="bar-cell" style="--acc:#0078BF"><i style="width:${(v/max*100).toFixed(1)}%"></i><span>${fmt(v)}</span></span>`;
+    return fmt(v);
+  };
+  document.getElementById('pages').innerHTML=`<div class="tablewrap"><table>
+    <thead><tr>${cols.map(c=>`<th data-k="${c.k}" class="${c.k===key?'sorted':''}">${c.l}${c.k===key?(dir<0?' ↓':' ↑'):''}</th>`).join('')}</tr></thead>
+    <tbody>${rows.slice(0,300).map(r=>`<tr>${cols.map(c=>`<td${c.b?' class="bar-cell"':''}>${cell(r,c)}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table></div>`;
+  document.getElementById('pagesNote').textContent=`${Math.min(rows.length,300)} из ${rows.length}`;
+  document.querySelectorAll('#pages th').forEach(th=>th.addEventListener('click',()=>{
+    S.sort=S.sort.key===th.dataset.k?{key:th.dataset.k,dir:-S.sort.dir}:{key:th.dataset.k,dir:-1};
+    drawPages(P);}));
+  S._pages=rows;
+}
+
+function drawCountries(C,tot){
+  const max=Math.max(...C.map(r=>r.m[0]),1);
+  document.getElementById('countries').innerHTML=`<div class="tablewrap"><table>
+    <thead><tr><th>Страна</th><th>Сессии</th><th>Доля</th></tr></thead>
+    <tbody>${C.slice(0,15).map(r=>`<tr><td>${r.d[0]}</td>
+      <td class="bar-cell" style="--acc:#765BA7"><i style="width:${(r.m[0]/max*100).toFixed(1)}%"></i><span>${fmt(r.m[0])}</span></td>
+      <td>${pf(r.m[0]/tot)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+/* ============ Mediavine ============ */
+function parseCSV(t){if(t.charCodeAt(0)===0xFEFF)t=t.slice(1);const R=[];let c=[],f='',i=0,q=false;
+  while(i<t.length){const ch=t[i];
+    if(q){if(ch==='"'){if(t[i+1]==='"'){f+='"';i+=2;continue;}q=false;i++;continue;}f+=ch;i++;continue;}
+    if(ch==='"'){q=true;i++;continue;}
+    if(ch===','){c.push(f);f='';i++;continue;}
+    if(ch==='\r'){i++;continue;}
+    if(ch==='\n'){c.push(f);R.push(c);c=[];f='';i++;continue;}
+    f+=ch;i++;}
+  if(f.length||c.length){c.push(f);R.push(c);}return R;}
+document.getElementById('mvFile').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const fr=new FileReader();
+  fr.onload=()=>{
+    const rows=parseCSV(fr.result), H=rows[0].map(x=>x.trim().toLowerCase());
+    const i=n=>H.findIndex(h=>h===n||h.replace(/[^a-z]/g,'')===n);
+    const iS=i('slug'),iV=i('views'),iR=i('revenue'),iP=i('rpm'),iI=i('impressionsperpageview');
+    if(iS<0||iR<0){document.getElementById('mvNote').textContent='Не нашла колонки slug и revenue.';return;}
+    S.mv={};
+    for(let k=1;k<rows.length;k++){const r=rows[k]; if(!r[iS])continue;
+      S.mv[norm(r[iS])]={views:+r[iV]||0,revenue:+r[iR]||0,rpm:+r[iP]||0,ipp:+r[iI]||0};}
+    document.getElementById('mvNote').textContent=Object.keys(S.mv).length+' страниц с доходом подключено';
+    if(S.data) render();
+  };
+  fr.readAsText(f,'utf-8');
+});
+
+/* ============ прочее ============ */
+document.getElementById('exportCsv').addEventListener('click',()=>{
+  const rows=S._pages||[]; if(!rows.length) return;
+  const keys=['url','sessions','views','eng','rpm','revenue','ipp'];
+  const csv=[keys.join(','),...rows.map(r=>keys.map(k=>{
+    const v=r[k]; return typeof v==='number'?v:'"'+String(v??'').replace(/"/g,'""')+'"';}).join(','))].join('\n');
+  const b=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(b),a=document.createElement('a');
+  a.href=u;a.download='ga4-страницы.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),1500);
+});
+document.getElementById('prop').addEventListener('change',e=>{S.prop=e.target.value;load();});
+document.getElementById('range').addEventListener('change',load);
+document.getElementById('refresh').addEventListener('click',load);
+document.getElementById('q').addEventListener('input',()=>{if(S.data)drawPages(rowsOf(S.data.reports[1]));});
+if(CLIENT_ID) document.getElementById('cid').value=CLIENT_ID;
+</script>
+</body>
+</html>
