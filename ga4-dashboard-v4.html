@@ -41,6 +41,7 @@ select:hover{border-color:var(--rose)}
 .btn:hover{background:var(--plum)}
 .btn.soft{background:var(--card);color:var(--ink);border:1.5px solid var(--line)}
 .btn.soft:hover{border-color:var(--rose);background:#fff}
+.tog{display:inline-flex;align-items:center;gap:7px;cursor:pointer}.tog input{accent-color:var(--rose);margin:0;width:15px;height:15px}
 .btn:disabled{opacity:.4;cursor:not-allowed}
 
 /* ---------- вердикт ---------- */
@@ -133,6 +134,7 @@ tr:hover td{background:#FDFAFB}
       <option value="30" selected>30 дней</option>
       <option value="90">90 дней</option>
     </select>
+    <label class="btn soft tog hide" id="nobotsWrap" title="Не учитывать трафик из Сингапура и Китая (бот-атаки)"><input type="checkbox" id="nobots" checked> Без ботов</label>
     <button class="btn soft hide" id="refresh">Обновить</button>
     <button class="btn" id="connect">Подключить Google</button>
   </div>
@@ -210,6 +212,10 @@ const CLIENT_ID = '37093972307-ee4j3g79hd861aqv62f0nni86crojs3q.apps.googleuserc
 const SCOPE='https://www.googleapis.com/auth/analytics.readonly';
 const ADMIN='https://analyticsadmin.googleapis.com/v1beta';
 const DATA='https://analyticsdata.googleapis.com/v1beta';
+/* Страны, откуда приходит бот-трафик (ложные пики в статистике). Фильтр применяется ко всем запросам к GA4, пока включён переключатель «Без ботов». */
+const BOT_COUNTRIES=['Singapore','China'];
+const botFilter=()=>document.getElementById('nobots').checked
+  ?{dimensionFilter:{notExpression:{filter:{fieldName:'country',inListFilter:{values:BOT_COUNTRIES}}}}}:{};
 const S={cid:CLIENT_ID,token:null,tokenExp:0,props:[],prop:null,data:null,mv:{},sort:{k:'sessions',d:-1}};
 
 /* ---------- утилиты ---------- */
@@ -284,6 +290,8 @@ async function loadProps(){
     sel.innerHTML=S.props.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
     sel.classList.remove('hide');
     document.getElementById('refresh').classList.remove('hide');
+    document.getElementById('nobotsWrap').classList.remove('hide');
+    try{const nb=localStorage.getItem('nobots');if(nb!==null)document.getElementById('nobots').checked=(nb==='1');}catch(e){}
     document.getElementById('connect').textContent='Сменить аккаунт';
     let lp=null,lr=null;try{lp=sessionStorage.getItem('p');lr=sessionStorage.getItem('r');}catch(e){}
     S.prop=(lp&&S.props.some(p=>p.id===lp))?lp:S.props[0].id; sel.value=S.prop;
@@ -305,16 +313,17 @@ async function load(){
   const d=+document.getElementById('range').value,R=ranges(d);
   msg('<span class="spin"></span>Считаю…',1);
   try{
+    const F=botFilter();
     const j=await api(`${DATA}/properties/${S.prop}:batchRunReports`,{requests:[
-      {dateRanges:[R.cur],dimensions:[{name:'date'}],
+      {...F,dateRanges:[R.cur],dimensions:[{name:'date'}],
        metrics:[{name:'sessions'},{name:'screenPageViews'}],orderBys:[{dimension:{dimensionName:'date'}}],limit:400},
-      {dateRanges:[R.cur],dimensions:[{name:'landingPagePlusQueryString'}],
+      {...F,dateRanges:[R.cur],dimensions:[{name:'landingPagePlusQueryString'}],
        metrics:[{name:'sessions'},{name:'screenPageViews'},{name:'averageSessionDuration'}],
        orderBys:[{metric:{metricName:'sessions'},desc:true}],limit:400},
-      {dateRanges:[R.prev],dimensions:[{name:'landingPagePlusQueryString'}],
+      {...F,dateRanges:[R.prev],dimensions:[{name:'landingPagePlusQueryString'}],
        metrics:[{name:'sessions'}],orderBys:[{metric:{metricName:'sessions'},desc:true}],limit:400},
-      {dateRanges:[R.cur],metrics:[{name:'sessions'},{name:'screenPageViews'},{name:'averageSessionDuration'},{name:'activeUsers'}]},
-      {dateRanges:[R.prev],metrics:[{name:'sessions'},{name:'screenPageViews'},{name:'averageSessionDuration'},{name:'activeUsers'}]}
+      {...F,dateRanges:[R.cur],metrics:[{name:'sessions'},{name:'screenPageViews'},{name:'averageSessionDuration'},{name:'activeUsers'}]},
+      {...F,dateRanges:[R.prev],metrics:[{name:'sessions'},{name:'screenPageViews'},{name:'averageSessionDuration'},{name:'activeUsers'}]}
     ]});
     S.data={rep:j.reports,R,days:d};msg('');render();
   }catch(e){msg(e.message);}
@@ -539,6 +548,8 @@ document.getElementById('prop').addEventListener('change',e=>{
 document.getElementById('range').addEventListener('change',e=>{
   try{sessionStorage.setItem('r',e.target.value);}catch(x){}load();});
 document.getElementById('refresh').addEventListener('click',load);
+document.getElementById('nobots').addEventListener('change',e=>{
+  try{localStorage.setItem('nobots',e.target.checked?'1':'0');}catch(x){}load();});
 ['q','filt'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{if(S.data)drawPages();}));
 try{const k=sessionStorage.getItem('ak');if(k)document.getElementById('akey').value=k;}catch(e){}
 if(CLIENT_ID){document.getElementById('cid').value=CLIENT_ID;
