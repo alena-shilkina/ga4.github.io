@@ -134,7 +134,7 @@ tr:hover td{background:#FDFAFB}
       <option value="30" selected>30 дней</option>
       <option value="90">90 дней</option>
     </select>
-    <label class="btn soft tog hide" id="nobotsWrap" title="Не учитывать трафик из Сингапура и Китая (бот-атаки)"><input type="checkbox" id="nobots" checked> Без ботов</label>
+    <label class="btn soft tog hide" id="nobotsWrap" title="Не учитывать ботов: Сингапур и Китай, дата-центры, Linux, «умные ТВ», типовые экраны автоматических браузеров"><input type="checkbox" id="nobots" checked> Без ботов</label>
     <button class="btn soft hide" id="refresh">Обновить</button>
     <button class="btn" id="connect">Подключить Google</button>
   </div>
@@ -214,8 +214,21 @@ const ADMIN='https://analyticsadmin.googleapis.com/v1beta';
 const DATA='https://analyticsdata.googleapis.com/v1beta';
 /* Страны, откуда приходит бот-трафик (ложные пики в статистике). Фильтр применяется ко всем запросам к GA4, пока включён переключатель «Без ботов». */
 const BOT_COUNTRIES=['Singapore','China'];
+/* Боты: дата-центры, Linux/«умные ТВ», типовые экраны headless-браузеров; для Direct — ещё Windows 1920x1080 и 375x812. */
+const inL=(f,v)=>({filter:{fieldName:f,inListFilter:{values:v}}});
+const BOT_EXPR={orGroup:{expressions:[
+  inL('country',BOT_COUNTRIES),
+  inL('operatingSystem',['Linux','(not set)','']),
+  inL('deviceCategory',['smart tv']),
+  inL('browser',['Mozilla Compatible Agent']),
+  inL('screenResolution',['1280x1200','800x600']),
+  inL('city',['Ashburn','North Bergen','Boardman','Council Bluffs']),
+  {andGroup:{expressions:[inL('sessionDefaultChannelGroup',['Direct']),{orGroup:{expressions:[
+    {andGroup:{expressions:[inL('operatingSystem',['Windows']),inL('screenResolution',['1920x1080'])]}},
+    inL('screenResolution',['375x812','1280x1024','1536x960'])]}}]}}
+]}};
 const botFilter=()=>document.getElementById('nobots').checked
-  ?{dimensionFilter:{notExpression:{filter:{fieldName:'country',inListFilter:{values:BOT_COUNTRIES}}}}}:{};
+  ?{dimensionFilter:{notExpression:BOT_EXPR}}:{};
 const S={cid:CLIENT_ID,token:null,tokenExp:0,props:[],prop:null,data:null,mv:{},sort:{k:'sessions',d:-1}};
 
 /* ---------- утилиты ---------- */
