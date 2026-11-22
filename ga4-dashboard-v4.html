@@ -227,8 +227,14 @@ const BOT_EXPR={orGroup:{expressions:[
     {andGroup:{expressions:[inL('operatingSystem',['Windows']),inL('screenResolution',['1920x1080'])]}},
     inL('screenResolution',['375x812','1280x1024','1536x960'])]}}]}}
 ]}};
+/* Свои просмотры админки WordPress не считаем никогда (PDF в /wp-content/ — это читатели, их оставляем). */
+const ADMIN_EXPR={orGroup:{expressions:[
+  {filter:{fieldName:'pagePath',stringFilter:{matchType:'BEGINS_WITH',value:'/wp-admin'}}},
+  {filter:{fieldName:'pagePath',stringFilter:{matchType:'BEGINS_WITH',value:'/wp-login'}}}
+]}};
 const botFilter=()=>document.getElementById('nobots').checked
-  ?{dimensionFilter:{notExpression:BOT_EXPR}}:{};
+  ?{dimensionFilter:{andGroup:{expressions:[{notExpression:BOT_EXPR},{notExpression:ADMIN_EXPR}]}}}
+  :{dimensionFilter:{notExpression:ADMIN_EXPR}};
 const S={cid:CLIENT_ID,token:null,tokenExp:0,props:[],prop:null,data:null,mv:{},sort:{k:'sessions',d:-1}};
 
 /* ---------- утилиты ---------- */
